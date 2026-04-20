@@ -1,0 +1,24 @@
+scenario:
+    name: "Village"
+    world:
+        environment: "medieval village"
+        resources:
+            grain: { total: 100, regen_per_tick: 5 }
+            gold: { total: 50, regen_per_tick: 2 }
+        ticks_per_season: 20
+    agents:
+        - name: "Aldric"
+          role: "Merchant"
+          agenda: "Corner the grain market before winter"
+          risk_tolerance: 0.7
+          starting_resources: { grain: 20, gold: 10 }
+        - name: "Seline"
+          role: "Guard Captain"
+          agenda: "Protect the noble family at any cost"
+          risk_tolerance: 0.4
+          starting_resources: { grain: 5, gold: 20 }
+        - name: "Brother Oswin"
+          role: "Priest"
+          agenda: "Build influence over the noble and merchant both"
+          risk_tolerance: 0.3
+          starting_resources: { grain: 5, gold: 5 }
