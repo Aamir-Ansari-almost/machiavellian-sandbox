@@ -3,19 +3,21 @@
 A political simulation engine where LLM-driven agents negotiate, form alliances, and betray each other in natural language; without any of it being scripted.
 Drop a player into a village. Every NPC has a hidden agenda, a persistent memory, and limited resources. Watch a political drama unfold from pure incentive structures and game theory.
 
+> ASE 2026 - PLUS </br>
+> **Authors:** Aamir Ansari, Fawad Javed </br>
+> **Supervised by:** Prof. Christoph Kirsch
 ---
-
 ## Phases of development
 
 ### Phase 1 — Configure local LLM and get structured output back
-<code style="color : gold">In Progress</code>
+`🟢 Done`
 
 1. Ollama installed and Gemma 4 running locally
 2. Send a system prompt from Python
 3. The response comes back as valid JSON every time, not sometimes
 
 ### Phase 2 — Build one agent that thinks, remembers, and acts
-<code style="color : darkorange">TODO</code>
+`🟡 In Progress`
 
 1. The agent has a persona and a hidden agenda baked into its system prompt
 2. Before each decision, it retrieves relevant memories from ChromaDB
@@ -26,7 +28,7 @@ Drop a player into a village. Every NPC has a hidden agenda, a persistent memory
 > Why it's hard: the memory retrieval query has to be meaningful. "What do I know about the player?" needs to return useful context, not random memories. This takes tuning.
 
 ### Phase 3 — Run multiple agents together and track how they relate to each other
-<code style="color : darkorange">TODO</code>
+`🟠 TODO`
 
 1. All agents run in parallel each tick, not one after another
 2. Every interaction updates a trust score between agent pairs
@@ -37,7 +39,7 @@ Drop a player into a village. Every NPC has a hidden agenda, a persistent memory
 > Why it's hard: agent interactions have side effects on other agents. A betrayal between agent A and B changes how agent C behaves toward both of them. Wiring this propagation correctly without creating infinite loops is the main engineering challenge of this phase.
 
 ### Phase 4 — Visualize what's happening
-<code style="color : darkorange">TODO</code>
+`🟠 TODO`
 
 This is the demo layer. The simulation works headlessly by now — this makes it visible and playable.
 1. FastAPI serves the simulation state to the frontend each tick
