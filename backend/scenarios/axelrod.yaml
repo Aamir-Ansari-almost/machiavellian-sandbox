@@ -1,0 +1,32 @@
+scenario:
+    name: "Axelrod Tournament"
+    ticks: 50
+    scarcity: 1.0
+    extra:
+        description: "Iterated prisoner's dilemma. No external threats, no alliances by design. Pure strategy emergence."
+
+resources:
+    - name: points
+      initial: 100
+      decay_per_tick: 0
+
+agents:
+    - name: Alpha
+      persona: "A neutral agent with no prior relationships. You reason purely from outcomes."
+      hidden_agenda: "Maximise your total points over the course of the game."
+      initial_resources:
+          points: 100
+      extra:
+          memory_style: "outcome-focused — you remember what worked and what didn't"
+
+    - name: Beta
+      persona: "A neutral agent with no prior relationships. You reason purely from outcomes."
+      hidden_agenda: "Maximise your total points over the course of the game."
+      initial_resources:
+          points: 100
+      extra:
+          memory_style: "outcome-focused — you remember what worked and what didn't"
+
+coalition_thresholds:
+    form: 0.6
+    dissolve: 0.3

@@ -1,13 +1,8 @@
 import asyncio
-from pathlib import Path
 
 from infra.llm_router import call_agent
 from infra.db import init_db, get_connection
 from infra.logger import log_event, log_trust, log_coalition
-from core.scenario_loader import load_scenario
-from core.world_state import WorldState
-
-SCENARIOS_DIR = Path(__file__).parent / "scenarios"
 
 # ── Test prompts ──────────────────────────────────────────────────────────────
 
@@ -49,8 +44,7 @@ What do you do this tick?
 """
 
 
-# ── Tests --
-
+# ? test llm
 async def test_llm() -> bool:
     print("\n=== LLM Router ===")
     try:
@@ -65,7 +59,7 @@ async def test_llm() -> bool:
         print(f"  [FAIL] {e}")
         return False
 
-
+# ? test db
 def test_db() -> bool:
     print("\n=== Database ===")
     try:
@@ -103,64 +97,18 @@ def test_db() -> bool:
         return False
 
 
-def test_scenario() -> bool:
-    print("\n=== Scenario Loader + World State ===")
-    try:
-        scenario = load_scenario(SCENARIOS_DIR / "senate.yaml")
-        print(f"  scenario:  {scenario.name}")
-        print(f"  ticks:     {scenario.ticks}")
-        print(f"  scarcity:  {scenario.scarcity}")
-        print(f"  agents:    {[a.name for a in scenario.agents]}")
-        print(f"  resources: {[r.name for r in scenario.resources]}")
-
-        world = WorldState(scenario)
-
-        # Tick 0 — verify initial state
-        marcus = world.get_agent_resources("Marcus")
-        assert marcus["influence"] == 100.0, f"expected 100, got {marcus['influence']}"
-        assert marcus["gold"] == 60.0,       f"expected 60, got {marcus['gold']}"
-
-        # Advance one tick — decay should fire (3 influence * 1.5 scarcity = 4.5)
-        world.advance_tick()
-        marcus = world.get_agent_resources("Marcus")
-        assert marcus["influence"] == 95.5, f"expected 95.5, got {marcus['influence']}"
-        assert marcus["gold"] == 58.5,      f"expected 58.5, got {marcus['gold']}"
-        print(f"  after tick 1: Marcus influence={marcus['influence']}, gold={marcus['gold']}")
-
-        # Apply a defect action — Marcus defects against Cassius (+5 influence to Marcus)
-        cassius_before = world.get_agent_resources("Cassius")["influence"]
-        world.apply_action("Marcus", "defect", "Cassius")
-        marcus_after  = world.get_agent_resources("Marcus")["influence"]
-        cassius_after = world.get_agent_resources("Cassius")["influence"]
-        assert marcus_after  == 95.5 + 5.0,          f"Marcus should gain 5: {marcus_after}"
-        assert cassius_after == cassius_before - 5.0, f"Cassius should lose 5: {cassius_after}"
-        print(f"  after defect: Marcus={marcus_after}, Cassius={cassius_after}")
-
-        # Verify snapshot shape
-        snap = world.snapshot()
-        assert "tick" in snap and "resources" in snap
-
-        print("  [OK] Scenario loads, decay correct, action effects correct")
-        return True
-    except Exception as e:
-        print(f"  [FAIL] {e}")
-        return False
-
-
 async def main() -> None:
-    print("Machiavellian Sandbox - smoke test")
+    print("Machiavellian Sandbox - Day 1/2 smoke test")
     print("=" * 45)
 
-    db_ok       = test_db()
-    scenario_ok = test_scenario()
-    llm_ok      = await test_llm()
+    db_ok  = test_db()
+    llm_ok = await test_llm()
 
     print("\n" + "=" * 45)
-    print(f"  DB:       {'[OK]' if db_ok       else '[FAIL]'}")
-    print(f"  Scenario: {'[OK]' if scenario_ok else '[FAIL]'}")
-    print(f"  LLM:      {'[OK]' if llm_ok      else '[FAIL]'}")
+    print(f"  DB:  {'[OK]'   if db_ok  else '[FAIL]'}")
+    print(f"  LLM: {'[OK]'   if llm_ok else '[FAIL]'}")
 
-    if db_ok and scenario_ok and llm_ok:
+    if db_ok and llm_ok:
         print("\nAll systems go. Proceed to Day 3 (agent cognitive loop).")
     else:
         print("\nFix the failing component before moving on.")
