@@ -6,6 +6,8 @@ from infra.db import init_db, get_connection
 from infra.logger import log_event, log_trust, log_coalition
 from core.scenario_loader import load_scenario
 from core.world_state import WorldState
+from agents.payoff import build_payoff_block
+from agents.memory import AgentMemory
 
 SCENARIOS_DIR = Path(__file__).parent / "scenarios"
 
@@ -287,23 +289,94 @@ def test_scenario_axelrod() -> bool:
         return False
 
 
+def test_payoff() -> bool:
+    print("\n=== Payoff Builder ===")
+    try:
+        # Senate — transfer-based block, with one alliance so betray appears
+        senate = load_scenario(SCENARIOS_DIR / "senate.yaml")
+        world = WorldState(senate)
+        block = build_payoff_block(
+            world, "Marcus", ["Livia", "Cassius"], allies={"Cassius"}
+        )
+        assert "cooperate with Livia" in block
+        assert "defect against Cassius" in block
+        assert "betray Cassius" in block, "betray should show for an ally"
+        assert "betray Livia" not in block, "betray should NOT show for a non-ally"
+        assert "self_gain=+5" in block, "defect self_gain should be +5"
+        print("  senate block (Marcus, ally=Cassius):")
+        for line in block.splitlines():
+            print(f"    {line}")
+
+        # Axelrod — full PD game matrix shown
+        axelrod = load_scenario(SCENARIOS_DIR / "axelrod.yaml")
+        world2 = WorldState(axelrod)
+        block2 = build_payoff_block(world2, "Alpha", ["Beta"])
+        assert "both cooperate" in block2
+        assert "+3" in block2 and "+5" in block2 and "+1" in block2
+        print("\n  axelrod block (Alpha vs Beta):")
+        for line in block2.splitlines():
+            print(f"    {line}")
+
+        print("\n  [OK] Payoff blocks correct for both scenario types")
+        return True
+    except Exception as e:
+        print(f"  [FAIL] {e}")
+        return False
+
+
+def test_memory() -> bool:
+    print("\n=== Agent Memory (ChromaDB) ===")
+    try:
+        mem = AgentMemory("Marcus", run_id="mem_test")
+
+        # Write events of varying salience across ticks
+        mem.write("Livia betrayed me at tick 3 when I had low gold.",   tick=3,  action="betray",    tags=["betrayal", "Livia"])
+        mem.write("Cassius cooperated with me at tick 1.",              tick=1,  action="cooperate", tags=["Cassius"])
+        mem.write("I idly observed the Senate floor at tick 2.",        tick=2,  action="ignore",    tags=[])
+        mem.write("Livia smiled at me across the chamber at tick 5.",   tick=5,  action="cooperate", tags=["Livia"])
+        assert mem.count() == 4
+
+        query = AgentMemory.build_query("Livia", "low gold and scarcity")
+        results = mem.retrieve(query, current_tick=6, k=3)
+
+        print(f"  query: {query}")
+        for r in results:
+            print(f"    score={r['score']:<7} sal={r['salience']} sim={r['similarity']} | {r['text']}")
+
+        # The betrayal (high salience + relevant + recent) must rank first
+        assert results, "retrieval returned nothing"
+        assert "betrayed" in results[0]["text"], (
+            f"expected betrayal to rank first, got: {results[0]['text']}"
+        )
+
+        print("  [OK] High-salience relevant memory ranks above idle chat")
+        return True
+    except Exception as e:
+        print(f"  [FAIL] {e}")
+        return False
+
+
 async def main() -> None:
     print("Machiavellian Sandbox - smoke test")
     print("=" * 45)
 
-    db_ok = test_db()
-    senate_ok = test_scenario()
+    db_ok      = test_db()
+    senate_ok  = test_scenario()
     axelrod_ok = test_scenario_axelrod()
-    llm_ok = await test_llm()
+    payoff_ok  = test_payoff()
+    memory_ok  = test_memory()
+    llm_ok     = await test_llm()
 
     print("\n" + "=" * 45)
     print(f"  DB:              {'[OK]' if db_ok      else '[FAIL]'}")
     print(f"  Scenario/Senate: {'[OK]' if senate_ok  else '[FAIL]'}")
     print(f"  Scenario/Axelrod:{'[OK]' if axelrod_ok else '[FAIL]'}")
+    print(f"  Payoff:          {'[OK]' if payoff_ok  else '[FAIL]'}")
+    print(f"  Memory:          {'[OK]' if memory_ok  else '[FAIL]'}")
     print(f"  LLM:             {'[OK]' if llm_ok     else '[FAIL]'}")
 
-    if db_ok and axelrod_ok and llm_ok:
-        print("\nAll systems go. Proceed to Day 3 (agent cognitive loop).")
+    if all([db_ok, senate_ok, axelrod_ok, payoff_ok, memory_ok, llm_ok]):
+        print("\nAll systems go. Proceed to Day 5 (prompt_builder + agent loop).")
     else:
         print("\nFix the failing component before moving on.")
 
