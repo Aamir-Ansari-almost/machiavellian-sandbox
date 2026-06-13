@@ -114,6 +114,35 @@ class AgentMemory:
         scored.sort(key=lambda m: m["score"], reverse=True)
         return scored[:k]
 
+    # ── Recent buffer (working memory) ───────────────────────────────────────
+
+    def recent(self, current_tick: int, window: int = 3) -> list[dict]:
+        """
+        Everything that happened in the last `window` ticks, unconditionally —
+        no query, no semantic filter, no salience gate. This is working memory:
+        the agent always sees what just happened to it, even if it is "off-topic"
+        for this tick's retrieval query. Complements retrieve() (long-term recall).
+
+        Returned newest-first.
+        """
+        count = self._collection.count()
+        if count == 0:
+            return []
+
+        res = self._collection.get(include=["documents", "metadatas"])
+        recent: list[dict] = []
+        for doc, meta in zip(res["documents"], res["metadatas"]):
+            if current_tick - meta["tick"] <= window:
+                recent.append(
+                    {
+                        "text": doc,
+                        "tick": meta["tick"],
+                        "salience": meta["salience"],
+                    }
+                )
+        recent.sort(key=lambda m: m["tick"], reverse=True)
+        return recent
+
     # ── Query template ──────────────────────────────────────────────────────
 
     @staticmethod

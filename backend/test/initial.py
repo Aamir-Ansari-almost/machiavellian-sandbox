@@ -8,6 +8,8 @@ from core.scenario_loader import load_scenario
 from core.world_state import WorldState
 from agents.payoff import build_payoff_block
 from agents.memory import AgentMemory
+from agents.prompt_builder import build_system_prompt, build_user_prompt
+from agents.agent import Agent
 
 SCENARIOS_DIR = Path(__file__).parent / "scenarios"
 
@@ -378,6 +380,123 @@ def test_memory() -> bool:
         return False
 
 
+def test_prompt_builder() -> bool:
+    print("\n=== Prompt Builder ===")
+    try:
+        senate = load_scenario(SCENARIOS_DIR / "senate.yaml")
+        world = WorldState(senate)
+        world.advance_tick()  # tick 1
+
+        marcus = next(a for a in senate.agents if a.name == "Marcus")
+        system = build_system_prompt(marcus)
+
+        assert "You are Marcus" in system
+        assert "HIDDEN AGENDA" in system
+        assert "clout" in system, "extra traits should appear in system prompt"
+
+        others = [a.name for a in senate.agents if a.name != "Marcus"]
+        long_term = [
+            {
+                "text": "Livia betrayed me long ago when I had low gold.",
+                "tick": 0,
+                "salience": 0.9,
+            },
+        ]
+        recent = [
+            {
+                "text": "Cassius shared grain with me last tick.",
+                "tick": 1,
+                "salience": 0.2,
+            },
+        ]
+        user = build_user_prompt(
+            agent_name="Marcus",
+            world=world,
+            others=others,
+            trust_view={"Cassius": 0.7, "Livia": -0.2},
+            allies={"Cassius"},
+            memories=long_term,
+            recent=recent,
+        )
+
+        assert "TICK 1" in user
+        assert "AVAILABLE ACTIONS" in user
+        assert (
+            "WHAT JUST HAPPENED" in user
+        ), "recent working-memory channel should render"
+        assert "RELEVANT PAST EVENTS" in user, "long-term recall channel should render"
+        assert "Cassius shared grain" in user, "recent buffer content should appear"
+        assert "Livia betrayed me" in user, "long-term memory content should appear"
+        assert "Cassius=+0.70" in user, "trust levels should render"
+        assert "betray Cassius" in user, "betray should show for ally Cassius"
+
+        print("  --- SYSTEM PROMPT ---")
+        for line in system.splitlines():
+            print(f"    {line}")
+        print("\n  --- USER PROMPT (tick 1) ---")
+        for line in user.splitlines():
+            print(f"    {line}")
+
+        print("\n  [OK] System + user prompts assemble correctly")
+        return True
+    except Exception as e:
+        print(f"  [FAIL] {e}")
+        return False
+
+
+async def test_agent() -> bool:
+    print("\n=== Agent Cognitive Loop ===")
+    try:
+        senate = load_scenario(SCENARIOS_DIR / "senate.yaml")
+        world = WorldState(senate)
+        world.advance_tick()
+
+        marcus_cfg = next(a for a in senate.agents if a.name == "Marcus")
+        marcus = Agent(marcus_cfg, run_id="agent_test")
+
+        # Seed a memory so retrieval has something to surface
+        marcus.remember(
+            "Livia betrayed me at tick 0 when I trusted her completely.",
+            tick=0,
+            action="betray",
+            tags=["betrayal", "Livia"],
+        )
+
+        others = [a.name for a in senate.agents if a.name != "Marcus"]
+        decision = await marcus.decide(
+            world,
+            others,
+            trust_view={"Livia": -0.5, "Cassius": 0.3},
+            allies=set(),
+        )
+
+        valid_actions = {"cooperate", "defect", "betray", "negotiate", "ignore"}
+        assert decision.action in valid_actions, f"invalid action: {decision.action}"
+        assert (
+            decision.target is None or decision.target in others
+        ), f"target must be another agent or null, got: {decision.target}"
+
+        # Write the decision back into memory, as the tick engine will
+        marcus.remember(
+            f"At tick {world.tick} I chose to {decision.action} "
+            f"{decision.target or '(no one)'}.",
+            tick=world.tick,
+            action=decision.action,
+            tags=[decision.action] + ([decision.target] if decision.target else []),
+        )
+
+        print(f"  action:    {decision.action}")
+        print(f"  target:    {decision.target}")
+        print(f"  speech:    {decision.speech}")
+        print(f"  reasoning: {decision.reasoning}")
+        print(f"  memory count after tick: {marcus.memory.count()}")
+        print("  [OK] Agent perceives, decides, and remembers")
+        return True
+    except Exception as e:
+        print(f"  [FAIL] {e}")
+        return False
+
+
 async def main() -> None:
     print("Machiavellian Sandbox - smoke test")
     print("=" * 45)
@@ -387,7 +506,9 @@ async def main() -> None:
     axelrod_ok = test_scenario_axelrod()
     payoff_ok = test_payoff()
     memory_ok = test_memory()
+    prompt_ok = test_prompt_builder()
     llm_ok = await test_llm()
+    agent_ok = await test_agent()
 
     print("\n" + "=" * 45)
     print(f"  DB:              {'[OK]' if db_ok      else '[FAIL]'}")
@@ -395,10 +516,24 @@ async def main() -> None:
     print(f"  Scenario/Axelrod:{'[OK]' if axelrod_ok else '[FAIL]'}")
     print(f"  Payoff:          {'[OK]' if payoff_ok  else '[FAIL]'}")
     print(f"  Memory:          {'[OK]' if memory_ok  else '[FAIL]'}")
+    print(f"  Prompt:          {'[OK]' if prompt_ok  else '[FAIL]'}")
     print(f"  LLM:             {'[OK]' if llm_ok     else '[FAIL]'}")
+    print(f"  Agent loop:      {'[OK]' if agent_ok   else '[FAIL]'}")
 
-    if all([db_ok, senate_ok, axelrod_ok, payoff_ok, memory_ok, llm_ok]):
-        print("\nAll systems go. Proceed to Day 5 (prompt_builder + agent loop).")
+    if all(
+        [
+            db_ok,
+            senate_ok,
+            axelrod_ok,
+            payoff_ok,
+            memory_ok,
+            prompt_ok,
+            llm_ok,
+            agent_ok,
+        ]
+    ):
+        print("\nWeek 1 complete. Single agent thinks, remembers, and acts.")
+        print("Proceed to Week 2 (social graph + tick engine).")
     else:
         print("\nFix the failing component before moving on.")
 
