@@ -28,6 +28,25 @@ class CoalitionThresholds:
 
 
 @dataclass
+class PayoffMatrix:
+    """
+    Joint payoff table for two-action (cooperate/defect) scenarios.
+    Each entry is {actor: float, target: float} — points added to primary resource.
+
+    Classic prisoner's dilemma:
+        both_cooperate  (3, 3)
+        actor_defects   (5, 0)   — actor defects, target cooperated
+        target_defects  (0, 5)   — actor cooperated, target defected
+        both_defect     (1, 1)
+    """
+
+    both_cooperate: dict[str, float]
+    actor_defects: dict[str, float]
+    target_defects: dict[str, float]
+    both_defect: dict[str, float]
+
+
+@dataclass
 class ScenarioConfig:
     name: str
     ticks: int
@@ -36,6 +55,9 @@ class ScenarioConfig:
     resources: list[ResourceDef]
     agents: list[AgentConfig]
     thresholds: CoalitionThresholds
+    payoff_matrix: PayoffMatrix | None = (
+        None  # None → use transfer-based _ACTION_EFFECTS
+    )
 
 
 def load_scenario(path: str | Path) -> ScenarioConfig:
@@ -58,7 +80,9 @@ def load_scenario(path: str | Path) -> ScenarioConfig:
             name=a["name"],
             persona=str(a["persona"]).strip(),
             hidden_agenda=str(a["hidden_agenda"]).strip(),
-            initial_resources={k: float(v) for k, v in a.get("initial_resources", {}).items()},
+            initial_resources={
+                k: float(v) for k, v in a.get("initial_resources", {}).items()
+            },
             extra=a.get("extra", {}),
         )
         for a in raw.get("agents", [])
@@ -70,6 +94,16 @@ def load_scenario(path: str | Path) -> ScenarioConfig:
         dissolve=float(thresholds_raw.get("dissolve", 0.3)),
     )
 
+    payoff_matrix: PayoffMatrix | None = None
+    if "payoff_matrix" in raw:
+        pm = raw["payoff_matrix"]
+        payoff_matrix = PayoffMatrix(
+            both_cooperate={k: float(v) for k, v in pm["both_cooperate"].items()},
+            actor_defects={k: float(v) for k, v in pm["actor_defects"].items()},
+            target_defects={k: float(v) for k, v in pm["target_defects"].items()},
+            both_defect={k: float(v) for k, v in pm["both_defect"].items()},
+        )
+
     return ScenarioConfig(
         name=str(scenario_block["name"]),
         ticks=int(scenario_block.get("ticks", 50)),
@@ -78,4 +112,5 @@ def load_scenario(path: str | Path) -> ScenarioConfig:
         resources=resources,
         agents=agents,
         thresholds=thresholds,
+        payoff_matrix=payoff_matrix,
     )

@@ -30,3 +30,12 @@ agents:
 coalition_thresholds:
     form: 0.6
     dissolve: 0.3
+
+# Classic prisoner's dilemma joint payoff table.
+# Resolution is pairwise: both agents' actions are known before points are awarded.
+# T > R > P > S  (5 > 3 > 1 > 0) — standard PD ordering.
+payoff_matrix:
+    both_cooperate: { actor: 3, target: 3 } # Reward — mutual cooperation
+    actor_defects: { actor: 5, target: 0 } # Temptation vs Sucker
+    target_defects: { actor: 0, target: 5 } # Sucker vs Temptation
+    both_defect: { actor: 1, target: 1 } # Punishment — mutual defection
