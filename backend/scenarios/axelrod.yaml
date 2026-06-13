@@ -2,6 +2,7 @@ scenario:
     name: "Axelrod Tournament"
     ticks: 50
     scarcity: 1.0
+    interaction_model: "pairwise"
     extra:
         description: "Iterated prisoner's dilemma. No external threats, no alliances by design. Pure strategy emergence."
 
