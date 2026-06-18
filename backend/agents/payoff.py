@@ -1,17 +1,9 @@
 from typing import Optional
 
 from core.world_state import WorldState
-
-# Trust deltas applied per action — actor's feeling toward target, and target's
-# back toward actor. Shown in the prompt as relationship_change; the same table
-# is applied by social/trust.py (Week 2). Victims always move more than actors.
-TRUST_DELTAS: dict[str, dict[str, float]] = {
-    "cooperate": {"actor_to_target": +0.10, "target_to_actor": +0.05},
-    "defect": {"actor_to_target": -0.20, "target_to_actor": -0.30},
-    "betray": {"actor_to_target": -0.50, "target_to_actor": -0.80},
-    "negotiate": {"actor_to_target": +0.20, "target_to_actor": +0.20},
-    "ignore": {"actor_to_target": 0.00, "target_to_actor": 0.00},
-}
+from social.trust import (
+    TRUST_DELTAS,
+)  # single source of truth; applied by social/trust.py
 
 
 def build_payoff_block(

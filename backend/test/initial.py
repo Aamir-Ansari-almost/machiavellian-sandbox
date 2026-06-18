@@ -10,6 +10,9 @@ from agents.payoff import build_payoff_block
 from agents.memory import AgentMemory
 from agents.prompt_builder import build_system_prompt, build_user_prompt
 from agents.agent import Agent
+from social.graph import SocialGraph
+from social.trust import apply_action as apply_trust, propagate_betrayal
+from social.coalition import CoalitionTracker
 
 SCENARIOS_DIR = Path(__file__).parent / "scenarios"
 
@@ -497,6 +500,84 @@ async def test_agent() -> bool:
         return False
 
 
+def test_social() -> bool:
+    print("\n=== Social Layer (graph + trust + coalition) ===")
+    try:
+        agents = ["Marcus", "Livia", "Cassius", "Brutus"]
+        graph = SocialGraph(agents)
+        tracker = CoalitionTracker(graph, form_threshold=0.6, dissolve_threshold=0.3)
+
+        # Everything starts neutral, no alliances
+        assert graph.trust("Marcus", "Cassius") == 0.0
+        assert tracker.update() == [], "no alliances should exist at neutral trust"
+
+        # Drive Marcus<->Cassius toward an alliance via repeated negotiation.
+        # negotiate moves actor->target +0.20 and target->actor +0.20.
+        # One negotiate from each side per round → +0.40 each direction per round.
+        for _ in range(2):
+            apply_trust(graph, "Marcus", "negotiate", "Cassius")
+            apply_trust(graph, "Cassius", "negotiate", "Marcus")
+        t_mc = graph.trust("Marcus", "Cassius")
+        t_cm = graph.trust("Cassius", "Marcus")
+        print(f"  Marcus<->Cassius trust: {t_mc:.2f} / {t_cm:.2f}")
+        assert t_mc > 0.6 and t_cm > 0.6
+
+        events = tracker.update()
+        formed = [e for e in events if e.event_type == "formed"]
+        assert len(formed) == 1, f"expected 1 alliance formed, got {events}"
+        assert tracker.are_allied("Marcus", "Cassius")
+        print(f"  ALLIANCE FORMED: {formed[0].agent_a} <-> {formed[0].agent_b}")
+
+        # Build a second alliance: Cassius<->Livia, so Livia witnesses a later betrayal.
+        for _ in range(2):
+            apply_trust(graph, "Cassius", "negotiate", "Livia")
+            apply_trust(graph, "Livia", "negotiate", "Cassius")
+        tracker.update()
+        assert tracker.are_allied("Cassius", "Livia")
+        print(f"  Cassius allies now: {sorted(tracker.allies_of('Cassius'))}")
+
+        # ── Marcus betrays Cassius ───────────────────────────────────────────
+        assert tracker.are_allied(
+            "Marcus", "Cassius"
+        ), "betray requires an active alliance"
+        mc_before = graph.trust("Cassius", "Marcus")
+        livia_before = graph.trust("Livia", "Marcus")
+
+        # apply the betrayal trust deltas
+        apply_trust(graph, "Marcus", "betray", "Cassius")
+        betrayal = tracker.record_betrayal("Marcus", "Cassius")
+        witnesses = tracker.witnesses("Marcus", "Cassius")
+        applied = propagate_betrayal(graph, "Marcus", "Cassius", witnesses)
+
+        print(f"  BETRAYAL: {betrayal.agent_a} -> {betrayal.agent_b}")
+        print(
+            f"  Cassius->Marcus trust: {mc_before:.2f} -> {graph.trust('Cassius','Marcus'):.2f}"
+        )
+        print(f"  witnesses: {witnesses}")
+        print(f"  propagation applied: {applied}")
+
+        # Victim's trust toward betrayer collapses (-0.80)
+        assert graph.trust("Cassius", "Marcus") < mc_before - 0.7
+        # Alliance is gone
+        assert not tracker.are_allied("Marcus", "Cassius")
+        # Livia witnessed it (allied with victim Cassius) and now trusts Marcus less
+        assert "Livia" in witnesses, f"Livia should witness, got {witnesses}"
+        assert (
+            graph.trust("Livia", "Marcus") < livia_before
+        ), "witness trust should drop"
+
+        # No infinite loop / no further cascade: propagation returned depth-1 only
+        assert set(applied.keys()) <= set(witnesses)
+
+        print(
+            "  [OK] Alliance forms, betrayal fires, propagation hits depth-1 witnesses"
+        )
+        return True
+    except Exception as e:
+        print(f"  [FAIL] {e}")
+        return False
+
+
 async def main() -> None:
     print("Machiavellian Sandbox - smoke test")
     print("=" * 45)
@@ -507,6 +588,7 @@ async def main() -> None:
     payoff_ok = test_payoff()
     memory_ok = test_memory()
     prompt_ok = test_prompt_builder()
+    social_ok = test_social()
     llm_ok = await test_llm()
     agent_ok = await test_agent()
 
@@ -517,6 +599,7 @@ async def main() -> None:
     print(f"  Payoff:          {'[OK]' if payoff_ok  else '[FAIL]'}")
     print(f"  Memory:          {'[OK]' if memory_ok  else '[FAIL]'}")
     print(f"  Prompt:          {'[OK]' if prompt_ok  else '[FAIL]'}")
+    print(f"  Social:          {'[OK]' if social_ok  else '[FAIL]'}")
     print(f"  LLM:             {'[OK]' if llm_ok     else '[FAIL]'}")
     print(f"  Agent loop:      {'[OK]' if agent_ok   else '[FAIL]'}")
 
@@ -528,12 +611,13 @@ async def main() -> None:
             payoff_ok,
             memory_ok,
             prompt_ok,
+            social_ok,
             llm_ok,
             agent_ok,
         ]
     ):
-        print("\nWeek 1 complete. Single agent thinks, remembers, and acts.")
-        print("Proceed to Week 2 (social graph + tick engine).")
+        print("\nSocial layer complete. Alliances form, betrayals fire and propagate.")
+        print("Proceed to Week 2 Day 3-4 (tick_engine).")
     else:
         print("\nFix the failing component before moving on.")
 
