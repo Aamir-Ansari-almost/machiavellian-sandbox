@@ -55,6 +55,21 @@ def cooperation_rate(conn: sqlite3.Connection, run_id: str, agent: str | None = 
         ).fetchone()[0]
     return coop / total if total else 0.0
 
+def cooperation_per_tick(conn: sqlite3.Connection, run_id: str) -> list[float]:
+    """Cooperation fraction at each tick (1..max), for time-series plots."""
+    last = n_ticks(conn, run_id)
+    series: list[float] = []
+    for tick in range(1, last + 1):
+        total = conn.execute(
+            "SELECT COUNT(*) FROM events WHERE run_id=? AND tick=?", (run_id, tick)
+        ).fetchone()[0]
+        coop = conn.execute(
+            "SELECT COUNT(*) FROM events WHERE run_id=? AND tick=? AND action='cooperate'",
+            (run_id, tick),
+        ).fetchone()[0]
+        series.append(coop / total if total else 0.0)
+    return series
+
 def first_betrayal_tick(conn: sqlite3.Connection, run_id: str) -> int | None:
     """
     Earliest tick where one agent defected/betrayed while the other cooperated
