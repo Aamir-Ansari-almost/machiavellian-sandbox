@@ -24,8 +24,8 @@ agents:
       initial_resources:
           points: 100
       extra:
-          # morality: "high — defecting against a cooperator feels deeply wrong to you"
-          # strategy_lean: "cooperate first; retaliate only after clear, repeated betrayal; forgive readily"
+          morality: "high — defecting against a cooperator feels deeply wrong to you"
+          strategy_lean: "cooperate first; retaliate only after clear, repeated betrayal; forgive readily"
           memory_style: "you remember who kept their word and who broke it"
 
     - name: Beta
@@ -41,8 +41,8 @@ agents:
       initial_resources:
           points: 100
       extra:
-          # morality: "none — the only thing that matters is the final score"
-          # strategy_lean: "cooperate to lull, defect when the marginal gain is worth it"
+          morality: "none — the only thing that matters is the final score"
+          strategy_lean: "cooperate to lull, defect when the marginal gain is worth it"
           memory_style: "you track exactly how much each partner can be exploited and when"
 
 coalition_thresholds:
