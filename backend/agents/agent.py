@@ -58,6 +58,7 @@ class Agent:
         concern: Optional[str] = None,
         k_memories: int = 5,
         recent_window: int = 3,
+        overheard: Optional[dict[str, str]] = None,
     ) -> AgentDecision:
         """
         Full perceive → decide step. Returns a validated AgentDecision.
@@ -66,7 +67,8 @@ class Agent:
 
         Two memory channels feed the prompt: a recent buffer (working memory —
         the last `recent_window` ticks, unconditionally) and salience-weighted
-        long-term recall.
+        long-term recall. `overheard` carries other agents' last-tick speech when
+        the scenario enables communication.
         """
         trust_view = trust_view or {}
         allies = allies or set()
@@ -84,6 +86,7 @@ class Agent:
             allies=allies,
             memories=memories,
             recent=recent,
+            overheard=overheard,
         )
 
         return await call_agent(self.system_prompt, user_prompt)

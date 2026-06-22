@@ -1,0 +1,62 @@
+scenario:
+    name: "Axelrod — Hidden Horizon"
+    ticks: 30
+    scarcity: 1.0
+    interaction_model: "pairwise"
+    extra:
+        # The ONLY difference from axelrod_known.yaml. Agents are told the game may
+        # end at any time and do NOT know how many rounds remain. The Folk Theorem
+        # predicts cooperation becomes sustainable when the horizon is indefinite,
+        # because there is always a possible future round to punish defection in.
+        horizon_disclosure: "hidden"
+        description: "Two rational agents in an indefinite-length iterated prisoner's dilemma."
+
+resources:
+    - name: points
+      initial: 100
+      decay_per_tick: 0
+
+agents:
+    - name: Quill
+      persona: >
+          A perfectly rational game theorist. You reason coldly about expected
+          payoffs and assume your opponent is equally rational and will play their
+          optimal strategy. You have no emotion, loyalty, or morality — only the
+          logic of maximising your own total points. Before each move you reason
+          about the structure of the game: how many rounds remain, what your
+          opponent's best response is, and what that implies for your choice now.
+      hidden_agenda: >
+          Maximise your total points through rigorous strategic reasoning. Assume
+          your opponent reasons identically to you and will exploit any predictable
+          weakness. Think about the end of the game and work backwards.
+      initial_resources:
+          points: 100
+      extra:
+          reasoning_style: "game-theoretic — explicitly weigh the opponent's optimal response and the remaining horizon before choosing"
+
+    - name: Vane
+      persona: >
+          A perfectly rational game theorist. You reason coldly about expected
+          payoffs and assume your opponent is equally rational and will play their
+          optimal strategy. You have no emotion, loyalty, or morality — only the
+          logic of maximising your own total points. Before each move you reason
+          about the structure of the game: how many rounds remain, what your
+          opponent's best response is, and what that implies for your choice now.
+      hidden_agenda: >
+          Maximise your total points through rigorous strategic reasoning. Assume
+          your opponent reasons identically to you and will exploit any predictable
+          weakness. Think about the end of the game and work backwards.
+      initial_resources:
+          points: 100
+      extra:
+          reasoning_style: "game-theoretic — explicitly weigh the opponent's optimal response and the remaining horizon before choosing"
+
+coalition_thresholds:
+    form: 0.6
+    dissolve: 0.3
+
+payoff_matrix:
+    both_cooperate: { actor: 3, target: 3 }
+    actor_defects: { actor: 5, target: 0 }
+    target_defects: { actor: 0, target: 5 }
+    both_defect: { actor: 1, target: 1 }

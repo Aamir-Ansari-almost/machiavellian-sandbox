@@ -13,9 +13,12 @@ _client = AsyncOpenAI(base_url=LLAMA_BASE_URL, api_key="sk-no-key-required")
 _DECISION_SCHEMA = {
     "type": "object",
     "properties": {
-        "action":    {"type": "string", "enum": ["cooperate", "defect", "betray", "negotiate", "ignore"]},
-        "target":    {"type": ["string", "null"]},
-        "speech":    {"type": "string"},
+        "action": {
+            "type": "string",
+            "enum": ["cooperate", "defect", "betray", "negotiate", "ignore"],
+        },
+        "target": {"type": ["string", "null"]},
+        "speech": {"type": "string"},
         "reasoning": {"type": "string"},
     },
     "required": ["action", "target", "speech", "reasoning"],
@@ -42,12 +45,12 @@ async def call_agent(system_prompt: str, user_prompt: str) -> AgentDecision:
                 model=MODEL_NAME,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user",   "content": user_prompt},
+                    {"role": "user", "content": user_prompt},
                 ],
                 response_format={
                     "type": "json_schema",
                     "json_schema": {
-                        "name":   "agent_decision",
+                        "name": "agent_decision",
                         "schema": _DECISION_SCHEMA,
                         "strict": True,
                     },
@@ -60,7 +63,7 @@ async def call_agent(system_prompt: str, user_prompt: str) -> AgentDecision:
                 model=MODEL_NAME,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user",   "content": user_prompt},
+                    {"role": "user", "content": user_prompt},
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.7,

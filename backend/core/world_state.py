@@ -17,6 +17,7 @@ _ACTION_EFFECTS: dict[str, dict[str, float]] = {
 class WorldState:
     def __init__(self, scenario: ScenarioConfig) -> None:
         self.tick: int = 0
+        self.total_ticks: int = scenario.ticks
         self.scarcity: float = scenario.scarcity
         self.scenario_name: str = scenario.name
         self.scenario_extra: dict = scenario.extra

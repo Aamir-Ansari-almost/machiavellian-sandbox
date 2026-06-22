@@ -18,6 +18,13 @@ from social.trust import apply_action as apply_trust_deltas, propagate_betrayal
 from social.coalition import CoalitionTracker, CoalitionEvent
 
 
+def _truthy(value) -> bool:
+    """Interpret a YAML extra value (bool or string) as on/off."""
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ("true", "on", "yes", "1")
+
+
 @dataclass
 class TickResult:
     """What happened in a single tick — returned so callers can stream/inspect."""
@@ -65,6 +72,10 @@ class TickEngine:
             form_threshold=scenario.thresholds.form,
             dissolve_threshold=scenario.thresholds.dissolve,
         )
+
+        # Cheap-talk channel: when on, each agent sees the others' last-tick speech.
+        self._communication = _truthy(scenario.extra.get("communication", False))
+        self._last_decisions: dict[str, AgentDecision] = {}
 
         # One shared ChromaDB client; each agent gets its own collection within it.
         self._mem_client = chromadb.EphemeralClient(
@@ -124,6 +135,9 @@ class TickEngine:
         if self.verbose:
             self._print_tick(tick, names, decisions, coalition_events)
 
+        # Remember this tick's speech so next tick can surface it (communication on).
+        self._last_decisions = decisions
+
         return TickResult(tick=tick, decisions=decisions, coalition_events=coalition_events)
 
     async def run(self) -> str:
@@ -132,6 +146,7 @@ class TickEngine:
             print(f"\n{'=' * 60}")
             print(f"  {self.scenario.name}  |  run_id={self.run_id}")
             print(f"  agents={len(self.agents)}  scarcity={self.world.scarcity}  ticks={self.scenario.ticks}")
+            print(f"  communication={'ON' if self._communication else 'off'}")
             print(f"{'=' * 60}")
 
         for _ in range(self.scenario.ticks):
@@ -195,11 +210,22 @@ class TickEngine:
             others = [n for n in names if n != name]
             trust_view = self.graph.trust_view(name)
             allies = self.coalitions.allies_of(name)
-            decision = await agent.decide(self.world, others, trust_view=trust_view, allies=allies)
+            overheard = self._overheard_for(others) if self._communication else None
+            decision = await agent.decide(
+                self.world, others, trust_view=trust_view, allies=allies, overheard=overheard
+            )
             return name, decision
 
         results = await asyncio.gather(*(decide_one(n) for n in names))
         return dict(results)
+
+    def _overheard_for(self, others: list[str]) -> dict[str, str]:
+        """Each other agent's speech from last tick (empty on tick 1)."""
+        return {
+            opp: self._last_decisions[opp].speech
+            for opp in others
+            if opp in self._last_decisions and self._last_decisions[opp].speech
+        }
 
     # ── Resolution: resources ─────────────────────────────────────────────────
 
