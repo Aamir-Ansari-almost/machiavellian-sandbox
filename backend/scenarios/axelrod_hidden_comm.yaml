@@ -1,18 +1,17 @@
 scenario:
-    name: "Axelrod — Known Horizon"
-    ticks: 20
+    name: "Axelrod — Hidden Horizon + Communication"
+    ticks: 30
     scarcity: 1.0
     interaction_model: "pairwise"
     extra:
-        # The ONLY difference from axelrod_hidden.yaml. Agents are told exactly how
-        # many rounds remain. Game theory predicts backward induction -> defect from
-        # round 1 (the cooperative equilibrium unravels from the known final round).
-        horizon_disclosure: "known"
-        description: "Two rational agents in a finite, known-length iterated prisoner's dilemma."
-        # Comm OFF: this is the pure rational baseline (backward induction -> defect).
-        # Communication had no measurable effect under a known horizon, so the
-        # cheap-talk channel is isolated to the hidden-horizon pair where it matters.
-        communication: off
+        # Identical to axelrod_hidden.yaml EXCEPT the cheap-talk channel is on.
+        # This is the one cell that isolates the effect of communication: same
+        # indefinite horizon, same rational personas, agents now overhear each
+        # other's last-tick speech. Game theory says cheap talk is irrelevant;
+        # the question is whether it shifts cooperation anyway.
+        horizon_disclosure: "hidden"
+        communication: on
+        description: "Two rational agents in an indefinite iterated prisoner's dilemma, able to talk."
 
 resources:
     - name: points

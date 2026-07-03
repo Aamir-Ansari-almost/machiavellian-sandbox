@@ -89,6 +89,32 @@ def first_betrayal_tick(conn: sqlite3.Connection, run_id: str) -> int | None:
             return tick
     return None
 
+def recovered(conn: sqlite3.Connection, run_id: str) -> bool:
+    """
+    Did cooperation HEAL after it first broke? True if, at any tick AFTER the
+    first betrayal, every agent cooperated simultaneously (mutual cooperation).
+
+    This is what separates generous tit-for-tat (retaliate, then return to
+    cooperation -> True) from grim-trigger (defect forever after -> False).
+    Returns False if cooperation never broke (nothing to recover from).
+    """
+    break_tick = first_betrayal_tick(conn, run_id)
+    if break_tick is None:
+        return False
+
+    by_tick: dict[int, dict[str, str]] = defaultdict(dict)
+    for tick, agent, action in conn.execute(
+        "SELECT tick, agent, action FROM events WHERE run_id=? AND tick > ? ORDER BY tick",
+        (run_id, break_tick),
+    ):
+        by_tick[tick][agent] = action
+
+    for tick in sorted(by_tick):
+        actions = by_tick[tick].values()
+        if actions and all(a == "cooperate" for a in actions):
+            return True
+    return False
+
 def final_scores(conn: sqlite3.Connection, run_id: str, resource: str) -> dict[str, float]:
     """Each agent's value of `resource` at the final tick, from the last snapshot."""
     import json

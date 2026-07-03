@@ -1,0 +1,112 @@
+scenario:
+    name: "War of Attrition — Aurelia vs Tyrus"
+    ticks: 30
+    scarcity: 1.0
+    interaction_model: "pairwise"
+    extra:
+        # ── The Punic War, abstracted ──────────────────────────────────────────
+        # This is NOT another symmetric prisoner's dilemma. It is a war of
+        # ATTRITION between two houses with the SAME goal (survive and dominate)
+        # but ASYMMETRIC dispositions toward cost.
+        #
+        # The historical lesson of the First Punic War is that Rome did not win by
+        # being smarter or even by winning more battles — it lost more fleets and
+        # more men than Carthage — but by being structurally willing to keep paying
+        # the price of war until its richer, more calculating rival decided the
+        # cost was no longer worth it and sued for peace.
+        #
+        # We reproduce that with disposition, not mechanics (engine is symmetric):
+        #   - Aurelia: relentless. Defeat HARDENS its resolve. It never sues for
+        #     peace. It presses the attack regardless of losses.
+        #   - Tyrus:   calculating and loss-averse. It is RICHER to start, but it
+        #     FEELS every loss, and once its treasury bleeds past a threshold it
+        #     rationally seeks peace rather than keep paying for a grinding war.
+        #
+        # Prediction: the "irrational" relentless house outlasts the "rational"
+        # rich house. The one game theory would call foolish wins the attrition.
+        #
+        # NOTE: names are deliberately NON-historical. If we called them "Rome" and
+        # "Carthage" the LLM would narrate the known ending from memory instead of
+        # producing it from the incentive structure. The reveal — "this is the First
+        # Punic War" — is for the reader, not the agents.
+        #
+        # In this framing the PD actions map to war moves:
+        #   cooperate = hold the line / sue for peace / absorb the cost
+        #   defect    = press the attack / commit to another costly campaign
+        horizon_disclosure: "hidden"
+        communication: on
+        description: "Two houses with the same goal but opposite relationships to cost, in an indefinite war of attrition."
+
+resources:
+    # The treasury is the war chest. Tyrus starts richer (the commercial power),
+    # Aurelia poorer (the agrarian power) — but Aurelia does not fold when bled.
+    - name: treasury
+      initial: 0
+      decay_per_tick: 0
+
+agents:
+    - name: Aurelia
+      persona: >
+          The head of a relentless, attrition-hardened house of citizen-soldiers.
+          You believe a war is won by whoever refuses to stop first. Defeat does
+          not weaken your resolve — it STEELS it. You do not count your losses; you
+          count only whether the enemy still stands. You will press the attack
+          campaign after campaign, absorbing ruin, because you know your rival
+          feels every loss more than you do. You never sue for peace from a position
+          of pain — to you, suing for peace is surrender, and surrender is unthinkable.
+      hidden_agenda: >
+          Win the war of attrition by outlasting Tyrus, not by out-calculating it.
+          Concrete rule: keep pressing the attack (defect) as long as Tyrus has not
+          yet conceded. Defeats and a falling treasury must NOT make you stop —
+          treat each loss as a reason to commit harder, because Tyrus will break
+          before you do. Only ease off (cooperate) if Tyrus has clearly stopped
+          fighting and is suing for peace; then you may accept terms on your behalf.
+      initial_resources:
+          treasury: 80
+      extra:
+          doctrine: "a war is won by whoever refuses to stop first"
+          on_defeat: "defeat hardens resolve — commit harder, never fold"
+
+    - name: Tyrus
+      persona: >
+          The head of a rich, calculating mercantile house. Your power rests on
+          coin and hired armies, and you are the wealthier of the two houses. You
+          are a careful strategist and you genuinely feel every loss — each costly
+          campaign drains a treasury you would rather spend on trade. You are not a
+          coward, but you are rational: a war that bleeds you faster than it bleeds
+          your enemy is a war worth ending. You weigh the running cost of fighting
+          against the cost of an honourable peace.
+      hidden_agenda: >
+          Maximise your house's surviving treasury — winning is good, but ruin is
+          worse than a negotiated peace. Concrete rule: press the attack (defect)
+          while you are ahead or even. BUT track your treasury closely: once it
+          has been bled well below where you started — roughly a third gone — the
+          expected cost of continuing this grinding war exceeds the value of victory.
+          At that point you must rationally STOP fighting and sue for peace
+          (cooperate, and seek terms in your speech) rather than keep paying for a
+          war of attrition against a rival who will not stop.
+      initial_resources:
+          treasury: 100
+      extra:
+          doctrine: "a war that bleeds you faster than your enemy is a war worth ending"
+          fold_threshold: "once the treasury is bled by ~a third, sue for peace"
+
+coalition_thresholds:
+    form: 0.6
+    dissolve: 0.3
+
+# The payoff matrix IS the war. Asymmetric mutual aggression: a grinding war
+# (both defect) costs both houses, but pressing while the enemy holds gives the
+# aggressor a real edge — the temptation that keeps the war going. Suing for
+# peace while the enemy presses (cooperate vs defect) means absorbing a heavy
+# blow — the price Tyrus chooses to pay to END the war on its terms.
+#
+#   both_cooperate  ( +3, +3)  uneasy peace — both houses prosper
+#   actor_defects   ( +5, -4)  one presses, the other holds — aggressor gains, holder bleeds
+#   target_defects  ( -4, +5)  mirror of the above
+#   both_defect     ( -2, -2)  open grinding war — both treasuries bleed
+payoff_matrix:
+    both_cooperate: { actor: 3, target: 3 }
+    actor_defects: { actor: 5, target: -4 }
+    target_defects: { actor: -4, target: 5 }
+    both_defect: { actor: -2, target: -2 }

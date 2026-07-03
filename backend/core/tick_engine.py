@@ -257,6 +257,24 @@ class TickEngine:
             return None
         return target
 
+    def _opponents_for(self, actor: str, decision: AgentDecision, names: list[str]) -> list[str]:
+        """
+        Who an agent's action is directed at, for trust + memory purposes.
+
+        In payoff-matrix (PD) scenarios the opponent is STRUCTURAL — the other
+        agent(s) in the pairwise game — so we must NOT rely on the LLM filling in
+        `target`. In a 2-player PD the model almost always leaves target null, and
+        if we gate trust/memory on it the victim never perceives being defected on:
+        its trust stays neutral and it has no memory of the betrayal, so it can
+        never retaliate. (That blindness, not stupidity, is what produced the
+        un-retaliated 'sucker' runs.) In transfer scenarios the action is directed
+        only at the explicit, validated target.
+        """
+        if self.world.has_payoff_matrix:
+            return [n for n in names if n != actor]
+        target = self._valid_target(actor, decision.target)
+        return [target] if target else []
+
     # ── Resolution: trust + coalitions ─────────────────────────────────────────
 
     def _resolve_social(self, names: list[str], decisions: dict[str, AgentDecision]) -> list[CoalitionEvent]:
@@ -265,21 +283,18 @@ class TickEngine:
         # Apply trust deltas and detect betrayals in deterministic order.
         for name in names:
             d = decisions[name]
-            target = self._valid_target(name, d.target)
-            if target is None:
-                continue
+            for target in self._opponents_for(name, d, names):
+                action = d.action
+                # `betray` only fires as a betrayal if an alliance currently exists.
+                if action == "betray" and not self.coalitions.are_allied(name, target):
+                    action = "defect"
 
-            action = d.action
-            # `betray` only fires as a betrayal if an alliance currently exists.
-            if action == "betray" and not self.coalitions.are_allied(name, target):
-                action = "defect"
+                apply_trust_deltas(self.graph, name, action, target)
 
-            apply_trust_deltas(self.graph, name, action, target)
-
-            if action == "betray":
-                witnesses = self.coalitions.witnesses(name, target)
-                events.append(self.coalitions.record_betrayal(name, target))
-                propagate_betrayal(self.graph, name, target, witnesses)
+                if action == "betray":
+                    witnesses = self.coalitions.witnesses(name, target)
+                    events.append(self.coalitions.record_betrayal(name, target))
+                    propagate_betrayal(self.graph, name, target, witnesses)
 
         # Recompute alliance state for form/dissolve transitions.
         events.extend(self.coalitions.update())
@@ -290,27 +305,30 @@ class TickEngine:
     def _write_memories(self, tick, names, decisions, coalition_events) -> None:
         for name in names:
             d = decisions[name]
-            target = self._valid_target(name, d.target)
+            opponents = self._opponents_for(name, d, names)
+            who = ", ".join(opponents) if opponents else "(no specific target)"
             actor_text = (
-                f"At tick {tick} I chose to {d.action} "
-                f"{target if target else '(no specific target)'}. {d.reasoning}"
+                f"At tick {tick} I chose to {d.action} {who}. {d.reasoning}"
             )
             self.agents[name].remember(
                 actor_text, tick=tick, action=d.action,
-                tags=[d.action] + ([target] if target else []),
+                tags=[d.action] + opponents,
             )
 
-        # Victims and witnesses record what was done TO them.
+        # Victims and witnesses record what was done TO them. In a PD the opponent
+        # is structural, so the victim records the defection even when the actor
+        # left `target` null — without this the victim stays blind and never
+        # retaliates.
         for name in names:
             d = decisions[name]
-            target = self._valid_target(name, d.target)
-            if target is None or d.action in ("ignore",):
+            if d.action in ("ignore",):
                 continue
-            victim_text = f"At tick {tick}, {name} chose to {d.action} me."
-            self.agents[target].remember(
-                victim_text, tick=tick, action=d.action,
-                tags=[d.action, name],
-            )
+            for target in self._opponents_for(name, d, names):
+                victim_text = f"At tick {tick}, {name} chose to {d.action} me."
+                self.agents[target].remember(
+                    victim_text, tick=tick, action=d.action,
+                    tags=[d.action, name],
+                )
 
     def _log(self, tick, names, decisions, coalition_events) -> None:
         for name in names:

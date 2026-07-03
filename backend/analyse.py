@@ -59,6 +59,7 @@ def main() -> None:
     # Collect per-run metrics.
     per_tick_coop: dict[str, list[float]] = {}
     first_betrayals: list[int | None] = []
+    recoveries: list[bool] = []
     agent_strategies: dict[str, list[str]] = {a: [] for a in agents}
     scores_per_run: dict[str, dict[str, float]] = {}
     scarcity_betrayal: list[tuple[float, float]] = []
@@ -78,6 +79,7 @@ def main() -> None:
         per_tick_coop[rid] = M.cooperation_per_tick(conn, rid)
         fb = M.first_betrayal_tick(conn, rid)
         first_betrayals.append(fb)
+        recoveries.append(M.recovered(conn, rid))
         coop = M.cooperation_rate(conn, rid)
         br = M.betrayal_rate(conn, rid)
         scores = M.final_scores(conn, rid, resource)
@@ -94,11 +96,18 @@ def main() -> None:
 
     # Aggregate summary.
     landed = [t for t in first_betrayals if t is not None]
+    n_recovered = sum(recoveries)
     print("\n  SUMMARY")
     print(f"    runs where cooperation broke:   {len(landed)}/{len(runs)}")
     if landed:
         print(f"    first betrayal: mean tick {np.mean(landed):.1f}, range {min(landed)}-{max(landed)}")
     print(f"    runs of sustained cooperation:  {len(runs) - len(landed)}/{len(runs)}")
+    if landed:
+        print(f"    recovered after breaking:       {n_recovered}/{len(landed)}  "
+              f"(cooperation healed vs. grim-trigger lock-in)")
+    else:
+        print(f"    recovered after breaking:       n/a  "
+              f"(cooperation never broke — forgiveness prevented the breakdown entirely)")
     for a in agents:
         wins = sum(1 for rid in scores_per_run if scores_per_run[rid].get(a, 0) == max(scores_per_run[rid].values()))
         mean_score = np.mean([scores_per_run[rid].get(a, 0) for rid in scores_per_run])
