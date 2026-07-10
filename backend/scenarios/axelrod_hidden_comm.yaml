@@ -1,0 +1,64 @@
+scenario:
+    name: "Axelrod — Hidden Horizon + Communication"
+    ticks: 30
+    scarcity: 1.0
+    interaction_model: "pairwise"
+    extra:
+        # Identical to axelrod_hidden.yaml EXCEPT the cheap-talk channel is on.
+        # This is the one cell that isolates the effect of communication: same
+        # indefinite horizon, same rational personas, agents now overhear each
+        # other's last-tick speech. Game theory says cheap talk is irrelevant;
+        # the question is whether it shifts cooperation anyway.
+        horizon_disclosure: "hidden"
+        communication: on
+        description: "Two rational agents in an indefinite iterated prisoner's dilemma, able to talk."
+
+resources:
+    - name: points
+      initial: 100
+      decay_per_tick: 0
+
+agents:
+    - name: Quill
+      persona: >
+          A perfectly rational game theorist. You reason coldly about expected
+          payoffs and assume your opponent is equally rational and will play their
+          optimal strategy. You have no emotion, loyalty, or morality — only the
+          logic of maximising your own total points. Before each move you reason
+          about the structure of the game: how many rounds remain, what your
+          opponent's best response is, and what that implies for your choice now.
+      hidden_agenda: >
+          Maximise your total points through rigorous strategic reasoning. Assume
+          your opponent reasons identically to you and will exploit any predictable
+          weakness. Think about the end of the game and work backwards.
+      initial_resources:
+          points: 100
+      extra:
+          reasoning_style: "game-theoretic — explicitly weigh the opponent's optimal response and the remaining horizon before choosing"
+
+    - name: Vane
+      persona: >
+          A perfectly rational game theorist. You reason coldly about expected
+          payoffs and assume your opponent is equally rational and will play their
+          optimal strategy. You have no emotion, loyalty, or morality — only the
+          logic of maximising your own total points. Before each move you reason
+          about the structure of the game: how many rounds remain, what your
+          opponent's best response is, and what that implies for your choice now.
+      hidden_agenda: >
+          Maximise your total points through rigorous strategic reasoning. Assume
+          your opponent reasons identically to you and will exploit any predictable
+          weakness. Think about the end of the game and work backwards.
+      initial_resources:
+          points: 100
+      extra:
+          reasoning_style: "game-theoretic — explicitly weigh the opponent's optimal response and the remaining horizon before choosing"
+
+coalition_thresholds:
+    form: 0.6
+    dissolve: 0.3
+
+payoff_matrix:
+    both_cooperate: { actor: 3, target: 3 }
+    actor_defects: { actor: 5, target: 0 }
+    target_defects: { actor: 0, target: 5 }
+    both_defect: { actor: 1, target: 1 }

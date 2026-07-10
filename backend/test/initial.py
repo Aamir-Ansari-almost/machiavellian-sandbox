@@ -537,7 +537,9 @@ def test_social() -> bool:
         print(f"  Cassius allies now: {sorted(tracker.allies_of('Cassius'))}")
 
         # ── Marcus betrays Cassius ───────────────────────────────────────────
-        assert tracker.are_allied("Marcus", "Cassius"), "betray requires an active alliance"
+        assert tracker.are_allied(
+            "Marcus", "Cassius"
+        ), "betray requires an active alliance"
         mc_before = graph.trust("Cassius", "Marcus")
         livia_before = graph.trust("Livia", "Marcus")
 
@@ -548,7 +550,9 @@ def test_social() -> bool:
         applied = propagate_betrayal(graph, "Marcus", "Cassius", witnesses)
 
         print(f"  BETRAYAL: {betrayal.agent_a} -> {betrayal.agent_b}")
-        print(f"  Cassius->Marcus trust: {mc_before:.2f} -> {graph.trust('Cassius','Marcus'):.2f}")
+        print(
+            f"  Cassius->Marcus trust: {mc_before:.2f} -> {graph.trust('Cassius','Marcus'):.2f}"
+        )
         print(f"  witnesses: {witnesses}")
         print(f"  propagation applied: {applied}")
 
@@ -558,12 +562,16 @@ def test_social() -> bool:
         assert not tracker.are_allied("Marcus", "Cassius")
         # Livia witnessed it (allied with victim Cassius) and now trusts Marcus less
         assert "Livia" in witnesses, f"Livia should witness, got {witnesses}"
-        assert graph.trust("Livia", "Marcus") < livia_before, "witness trust should drop"
+        assert (
+            graph.trust("Livia", "Marcus") < livia_before
+        ), "witness trust should drop"
 
         # No infinite loop / no further cascade: propagation returned depth-1 only
         assert set(applied.keys()) <= set(witnesses)
 
-        print("  [OK] Alliance forms, betrayal fires, propagation hits depth-1 witnesses")
+        print(
+            "  [OK] Alliance forms, betrayal fires, propagation hits depth-1 witnesses"
+        )
         return True
     except Exception as e:
         print(f"  [FAIL] {e}")

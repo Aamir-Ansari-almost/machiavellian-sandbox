@@ -1,0 +1,33 @@
+scenario:
+    name: "Axelrod's prisoner's dilemma"
+    ticks: 20
+    extra:
+        horizon_disclosure: 0 | 1
+        communication: 0 | 1
+
+resources:
+    - name: points
+      initial: 100
+
+agents:
+    - name: Alpha
+      persona: >
+          A perfectly rational player. You reason about expected payoffs and assume your opponent is equally rational.
+      hidden_agenda: >
+          Maximise your total points through rigorous strategic reasoning.
+      initial_resources:
+          points: 100
+
+    - name: Beta
+      persona: >
+          A perfectly rational player. You reason about expected payoffs and assume your opponent is equally rational.
+      hidden_agenda: >
+          Maximise your total points through rigorous strategic reasoning.
+      initial_resources:
+          points: 100
+
+payoff_matrix:
+    both_cooperate: { actor: 3, target: 3 }
+    actor_defects: { actor: 5, target: 0 }
+    target_defects: { actor: 0, target: 5 }
+    both_defect: { actor: 1, target: 1 }

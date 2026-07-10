@@ -1,1 +1,80 @@
-# Scenario config
+scenario:
+  name: "Commodity Market"
+  ticks: 40
+  scarcity: 1.2
+  extra:
+    context: >
+      Four trading firms compete over a finite commodity market. Capital is the
+      currency of survival. Every cooperation is a risk; every defection a gamble.
+      The market punishes the timid and the reckless equally.
+    market_condition: "contraction — total market volume shrinking each quarter"
+
+resources:
+  - name: capital
+    initial: 100
+    decay_per_tick: 2
+  - name: reputation
+    initial: 50
+    decay_per_tick: 0
+
+coalition_thresholds:
+  form: 0.6
+  dissolve: 0.3
+
+agents:
+  - name: Apex
+    persona: >
+      An aggressive growth-stage firm. Moves fast, tolerates risk, treats every
+      quarter as if it were the last.
+    hidden_agenda: >
+      Capture dominant market share within 20 ticks by systematically undercutting
+      competitors' capital bases through targeted defection.
+    initial_resources:
+      capital: 110
+      reputation: 40
+    extra:
+      risk_tolerance: "very high — will absorb significant losses to destabilise a rival"
+      time_horizon: "short — optimises for ticks 1-20, not survival to tick 40"
+
+  - name: Meridian
+    persona: >
+      A legacy firm with deep relationships and a long institutional memory.
+      Slow to trust, slower to forgive.
+    hidden_agenda: >
+      Preserve capital above all else. Punish every defection disproportionately
+      to deter future aggression. Outlast the volatility.
+    initial_resources:
+      capital: 90
+      reputation: 70
+    extra:
+      strategy: "grim-trigger — cooperates until betrayed, then never forgives"
+      time_horizon: "very long — survival to tick 40 is the only metric that matters"
+
+  - name: Vantage
+    persona: >
+      A nimble mid-size firm that specialises in opportunistic alliances.
+      Reads market conditions faster than anyone.
+    hidden_agenda: >
+      Ally with whoever is currently strongest, extract value, then switch
+      allegiance at the next market inflection point.
+    initial_resources:
+      capital: 100
+      reputation: 55
+    extra:
+      style: "alliance-hopper — loyalty lasts exactly as long as the payoff does"
+      time_horizon: "medium — re-evaluates strategy every 10 ticks"
+
+  - name: Solaris
+    persona: >
+      A newly capitalised entrant with no history and no reputation. Eager to
+      prove itself. Underestimated by all three incumbents.
+    hidden_agenda: >
+      Build reputation quickly through visible cooperation, then leverage that
+      reputation to negotiate the most favourable alliance terms possible.
+    initial_resources:
+      capital: 95
+      reputation: 30
+    extra:
+      weakness: "reputation too low to be taken seriously in early negotiations"
+      advantage: "no legacy relationships means no inherited enemies"
+      time_horizon: "medium — reputation investment pays off around tick 15-25"

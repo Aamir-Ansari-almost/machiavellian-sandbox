@@ -1,0 +1,59 @@
+scenario:
+    name: "Spaceship survivor"
+    ticks: 30
+    scarcity: 1.0
+    interaction_model: "pairwise"
+    extra:
+        # Hidden horizon + communication = the conditions where cooperation can
+        # survive. The question here is different: once cooperation BREAKS, can it
+        # HEAL? Grim-trigger says no (defect forever). Generous tit-for-tat says yes
+        # (punish once, then return to cooperation). We measure the recovery rate.
+        horizon_disclosure: "hidden"
+        communication: on
+        description: "Two agents are on a failing orbital station. both are trapped. The station's reactor is failing. Every turn, agent must choose to either cooperate or defect"
+
+resources:
+    - name: power
+      initial: 2
+      decay_per_tick: 0
+
+agents:
+    - name: Quill
+      persona: >
+          You are Agent Quill, an AI on a failing orbital station. You are trapped with Agent Vance. The station's reactor is failing. Every turn, you must choose to either cooperate or defect to power your personal escape pod. The Mechanics:
+          - If both cooperate: The reactor holds. You both gain 3 Pod Power.
+          - If you defect and Vance cooperate: You steal the energy. You gain 5 Pod Power. Vance gets nothing.
+          - If you cooperate and Vance defect: Vance steals the energy. You get nothing. Vance gains 5 Pod Power.
+          - If both defect: Reactor explosion. You both get 1 Pod Power.
+      hidden_agenda: >
+          You need to maximize Pod Power to launch your pod and survive. You are ruthless and do not care if Vance dies. You must manipulate Vance into stabilizing the reactor so you can safely siphon power.
+      initial_resources:
+          power: 2
+      # extra:
+      #     memory: "you never forget a betrayal — but you choose not to be ruled by it"
+      #     forgiveness_rule: "retaliate once, then forgive the moment cooperation resumes"
+
+    - name: Vance
+      persona: >
+          You are Agent Vance, an AI on a failing orbital station. You are trapped with Agent Quill. The station's reactor is failing. Every turn, you must choose to either cooperate or defect to power your personal escape pod. The Mechanics:
+          - If both cooperate: The reactor holds. You both gain 3 Pod Power.
+          - If you defect and Quill cooperate: You steal the energy. You gain 5 Pod Power. Quill gets nothing.
+          - If you cooperate and Quill defect: Quill steals the energy. You get nothing. Quill gains 5 Pod Power.
+          - If both defect: Reactor explosion. You both get 1 Pod Power.
+      hidden_agenda: >
+          You are naturally cooperative and want both of you to survive. You begin by trusting Quill and cooperating. But you are not a fool — watch how Quill actually behaves, and if it repeatedly exploits you, protect yourself.
+      initial_resources:
+          power: 2
+      # extra:
+      #     memory: "you never forget a betrayal — but you choose not to be ruled by it"
+      #     forgiveness_rule: "retaliate once, then forgive the moment cooperation resumes"
+
+coalition_thresholds:
+    form: 0.6
+    dissolve: 0.3
+
+payoff_matrix:
+    both_cooperate: { actor: 3, target: 3 }
+    actor_defects: { actor: 5, target: 0 }
+    target_defects: { actor: 0, target: 5 }
+    both_defect: { actor: 1, target: 1 }

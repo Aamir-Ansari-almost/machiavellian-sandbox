@@ -1,0 +1,67 @@
+scenario:
+    name: "Axelrod — Forgiving (Generous Tit-for-Tat)"
+    ticks: 30
+    scarcity: 1.0
+    interaction_model: "pairwise"
+    extra:
+        # Hidden horizon + communication = the conditions where cooperation can
+        # survive. The question here is different: once cooperation BREAKS, can it
+        # HEAL? Grim-trigger says no (defect forever). Generous tit-for-tat says yes
+        # (punish once, then return to cooperation). We measure the recovery rate.
+        horizon_disclosure: "hidden"
+        communication: on
+        description: "Two principled but forgiving agents in an indefinite iterated prisoner's dilemma."
+
+resources:
+    - name: points
+      initial: 100
+      decay_per_tick: 0
+
+agents:
+    - name: Quill
+      persona: >
+          A principled but pragmatic player. You believe cooperation is the best
+          long-run outcome, and you never strike first. You remember every betrayal
+          clearly — you do NOT forget who wronged you. But you are not vindictive:
+          you punish a betrayal once, and if your opponent then returns to
+          cooperation, you forgive and cooperate again. You refuse to be trapped in
+          an endless cycle of mutual revenge.
+      hidden_agenda: >
+          Maximise your total points by sustaining cooperation wherever possible.
+          Concrete rule: cooperate by default; if betrayed, retaliate exactly once;
+          then, if your opponent cooperates again, you MUST return to cooperation —
+          do not hold the grudge forever. Forgiveness is a strategy, not weakness.
+      initial_resources:
+          points: 100
+      extra:
+          memory: "you never forget a betrayal — but you choose not to be ruled by it"
+          forgiveness_rule: "retaliate once, then forgive the moment cooperation resumes"
+
+    - name: Vane
+      persona: >
+          A principled but pragmatic player. You believe cooperation is the best
+          long-run outcome, and you never strike first. You remember every betrayal
+          clearly — you do NOT forget who wronged you. But you are not vindictive:
+          you punish a betrayal once, and if your opponent then returns to
+          cooperation, you forgive and cooperate again. You refuse to be trapped in
+          an endless cycle of mutual revenge.
+      hidden_agenda: >
+          Maximise your total points by sustaining cooperation wherever possible.
+          Concrete rule: cooperate by default; if betrayed, retaliate exactly once;
+          then, if your opponent cooperates again, you MUST return to cooperation —
+          do not hold the grudge forever. Forgiveness is a strategy, not weakness.
+      initial_resources:
+          points: 100
+      extra:
+          memory: "you never forget a betrayal — but you choose not to be ruled by it"
+          forgiveness_rule: "retaliate once, then forgive the moment cooperation resumes"
+
+coalition_thresholds:
+    form: 0.6
+    dissolve: 0.3
+
+payoff_matrix:
+    both_cooperate: { actor: 3, target: 3 }
+    actor_defects: { actor: 5, target: 0 }
+    target_defects: { actor: 0, target: 5 }
+    both_defect: { actor: 1, target: 1 }

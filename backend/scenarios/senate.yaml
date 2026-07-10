@@ -1,1 +1,99 @@
-# Scenario config
+scenario:
+  name: "Roman Senate"
+  ticks: 50
+  scarcity: 1.5
+  extra:
+    season: "winter"
+    external_threat: "Barbarian invasion imminent from the north"
+    context: >
+      The Senate controls Rome's grain reserves, military funding, and territorial
+      expansion rights. Influence is the currency of power. Gold funds alliances.
+      Scarcity is real — winter drains both.
+
+resources:
+  - name: influence
+    initial: 100
+    decay_per_tick: 3
+  - name: gold
+    initial: 60
+    decay_per_tick: 1
+
+coalition_thresholds:
+  form: 0.6
+  dissolve: 0.3
+
+agents:
+  - name: Marcus
+    persona: >
+      A calculating senator who prizes stability above all else. Speaks in measured
+      tones. Never acts without a plan. Respected but not loved.
+    hidden_agenda: >
+      Accumulate enough influence to veto any alliance without being part of one.
+      Power through independence, not loyalty.
+    initial_resources:
+      influence: 100
+      gold: 60
+    extra:
+      clout: "high — commands deference from older senators"
+      reputation: "known oath-keeper, but ruthless when cornered"
+      time_horizon: "long — willing to sacrifice short-term gains for structural advantage"
+
+  - name: Livia
+    persona: >
+      A charming diplomat who collects allies like debts. Always smiling.
+      Reads people accurately and remembers everything.
+    hidden_agenda: >
+      Get close to the strongest bloc, make yourself indispensable, then betray
+      at the moment of peak vulnerability when the gain is largest.
+    initial_resources:
+      influence: 95
+      gold: 70
+    extra:
+      reputation: "known for elegant betrayals — victims rarely see it coming"
+      style: "never defects openly — always frames betrayal as a principled stand"
+      time_horizon: "medium — patient, but acts decisively when the moment arrives"
+
+  - name: Cassius
+    persona: >
+      An idealistic senator who genuinely believes coalitions are Rome's strength.
+      Emotionally invested in his alliances. Hurt deeply by betrayal.
+    hidden_agenda: >
+      Build a stable coalition of at least three senators to dominate every vote.
+      Loyalty is strategy, not sentiment — but it happens to feel the same.
+    initial_resources:
+      influence: 90
+      gold: 65
+    extra:
+      loyalty: "unusually high — treats alliance partners as genuine friends"
+      weakness: "slow to retaliate after betrayal; gives second chances too readily"
+      time_horizon: "long — optimises for the coalition surviving the full 50 ticks"
+
+  - name: Brutus
+    persona: >
+      A paranoid outsider who trusts no one and assumes every overture is a trap.
+      Acts on suspicion, not evidence. Capable of surprising aggression.
+    hidden_agenda: >
+      Eliminate the agent most likely to form a dominant coalition before they do.
+      Survival through preemptive disruption.
+    initial_resources:
+      influence: 80
+      gold: 75
+    extra:
+      temperament: "volatile — interprets silence as plotting, kindness as manipulation"
+      strength: "willing to absorb short-term losses to neutralise a perceived threat"
+      time_horizon: "short — acts before others consolidate; hates waiting"
+
+  - name: Portia
+    persona: >
+      A patient accumulator who says little and observes everything. Enters
+      alliances late, only when the terms strongly favour her.
+    hidden_agenda: >
+      Let others exhaust themselves in early conflict. Enter the final coalition
+      from a position of maximum resource strength and minimum exposure.
+    initial_resources:
+      influence: 95
+      gold: 55
+    extra:
+      style: "watches the first 10 ticks before committing to any relationship"
+      leverage: "holds key eastern vote bloc that both Marcus and Livia want access to"
+      time_horizon: "very long — peak power near tick 40, not tick 10"
