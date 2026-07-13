@@ -11,7 +11,8 @@ A scenario-agnostic simulation engine where LLM-driven agents negotiate, form al
 ## Documents
 
 - 📄 **[Project Proposal (PDF)](Machiavellian_Sandbox-Proposal.pdf)** — the original proposal.
-- 📄 **[Final Paper (PDF)](MachiavellianSandbox.pdf)** — *The Machiavellian Sandbox: A Configurable Platform for Testing Game-Theoretic Hypotheses with Language-Model Agents.* LaTeX source in [`paper/main.tex`](paper/main.tex).
+- 📄 **[Final Paper (PDF)](MachiavellianSandbox-Paper.pdf)** — *The Machiavellian Sandbox: A Configurable Platform for Testing Game-Theoretic Hypotheses with Language-Model Agents.* LaTeX source in [`paper/main.tex`](paper/main.tex).
+- 📄 **[Project Proposal (PDF)](MachiavellianSandbox-Presentation.pdf)** — Project presentation
 
 ---
 
@@ -61,18 +62,13 @@ The social graph — who trusts whom, which alliances are active, who just betra
 ### Phase 4 — Experiments, metrics, and analysis
 `🟢 Done`
 
-The demo/validation layer. Instead of a live D3 frontend (scoped out — see below), we produced a **controlled experimental study** and static analysis.
+The demo/validation layer, we produced a **controlled experimental study** and static analysis.
 
 1. The iterated prisoner's dilemma reproduced as a constrained instance of the general engine (cooperate/defect only), for an exact comparison to Axelrod's setting.
 2. A factorial sweep of controlled conditions (C1–C5): known vs. hidden horizon, communication, a "forgiving" trait, and a naming probe.
 3. Every action, trust value, and coalition event logged to SQLite for post-hoc analysis.
 4. Metrics computed and plotted (cooperation rate, strategy classification, first-move aggression).
 5. A five-agent Roman senate scenario run to test generalization beyond two players.
-
-### Phase 5 — Live visualization frontend
-`⚪ Scoped out`
-
-A React/Vite frontend was scaffolded ([`frontend/`](frontend/)) but the live D3 social-graph visualization was **deliberately cut** to focus the three-week timeline on the research contribution (Phases 2–4). The simulation runs fully headless. See *Future Work* in the paper.
 
 ---
 
@@ -112,7 +108,7 @@ The key insight: output quality scales with LLM capability, not with simulation 
 backend/     — the engine (core tick loop, agents, social graph, infra, scenarios, analysis)
 frontend/    — scaffolded React/Vite app (live visualization scoped out)
 paper/        — LaTeX source of the final paper (main.tex)
-*.pdf         — proposal and final paper
+*.pdf         — proposal, presentation and final paper
 ```
 
 ---
